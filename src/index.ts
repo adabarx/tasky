@@ -11,14 +11,15 @@ const notion = new Client({
     auth: process.env.NOTION_TOKEN
 })
 
-const res = await notion.databases.query({
-    database_id: process.env.DATABASE_ID || "eh"
-  });
-
-  console.log("Got response:", res);
-
-app.get('/', (_: Request, res: Response) => {
-    res.send('hello there');
+app.get('/', async (_: Request, res: Response) => {
+    const get_focus = async () => {
+        const data = await notion.databases.query({
+            database_id: process.env.DATABASE_ID || 'eh'
+        })
+        return data
+    }
+    const b = await get_focus()
+    res.json(b);
 });
 
 app.listen(port, () => {
