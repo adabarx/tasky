@@ -36,7 +36,7 @@ function get_last_cycle(history: History): LastCycle {
     history
         .filter((day: WorkDay) => day.date > cycle_ago)
         .forEach(day => {
-            day.tasks.forEach( task => {
+            day.tasks.forEach(task => {
                 const current_tally = task.id in tally ? tally[task.id] : 0;
                 tally[task.id] = current_tally + 1;
             })
@@ -46,18 +46,18 @@ function get_last_cycle(history: History): LastCycle {
 }
 
 function num_tasks_today(tasks: Tasks, last_cycle: LastCycle): number {
-    let target_avg = tasks.map(task => task.per_week)
-                          .reduce((total, number) => total + number, 0);
-    let current_avg = Object.values(last_cycle)
-                            .reduce((total, number) => total + number, 0);
-    target_avg = target_avg / CYCLE;
-    current_avg = current_avg / CYCLE;
+    const target_total = tasks.map(task => task.per_week)
+                              .reduce((total, number) => total + number, 0);
+    const target_daily_avg = target_total / CYCLE;
+    let current_total = Object.values(last_cycle)
+                              .reduce((total, number) => total + number, 0);
+    const current_daily_avg = current_total / CYCLE;
 
     let rv = 0;
-    if (current_avg === 0) {
-        rv = target_avg * target_avg;
+    if (current_daily_avg === 0) {
+        rv = target_daily_avg * target_daily_avg;
     } else {
-        rv = target_avg / current_avg;
+        rv = target_daily_avg / current_daily_avg;
     }
 
     // randomly round rv up or down weighted by the decimal remainder
