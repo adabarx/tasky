@@ -23,7 +23,6 @@ export function the_choosening(src_task_list: Array<Task>, tasks_completed:Array
      * The the_choosening function then iterates over the src_task_list and 
      * randomly selects tasks to be completed today based on their weight. The 
      * selected tasks are removed from the src_task_list and added to the returned array.
-     *
      */ 
     const num_today = num_tasks_today(src_task_list, tasks_completed);
     const weights = calc_weights(src_task_list, tasks_completed);
