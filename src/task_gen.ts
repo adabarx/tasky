@@ -1,8 +1,16 @@
-import { Task, Weights } from './types.js';
+import { 
+    SrcTaskList,
+    TaskHistory, 
+    Task,
+    Weights 
+} from './types.js';
 
 const CYCLE: number = Number(process.env.DAYS_PER_WEEK) || 7;
 
-export function the_choosening(src_task_list: Array<Task>, tasks_completed:Array<Task>): Array<Task> {
+export function the_choosening(
+    src_task_list: SrcTaskList,
+    task_history: TaskHistory,
+): [Set<Task>, Record<string, any>] {
     /** 
      * @param src_task_list - an array of Task objects, representing all of the 
      *                        available tasks to be completed.
@@ -24,35 +32,51 @@ export function the_choosening(src_task_list: Array<Task>, tasks_completed:Array
      * randomly selects tasks to be completed today based on their weight. The 
      * selected tasks are removed from the src_task_list and added to the returned array.
      */ 
-    const num_today = num_tasks_today(src_task_list, tasks_completed);
-    const weights = calc_weights(src_task_list, tasks_completed);
-    
-    let returned_tasks: Array<Task> = [];
+    let log: Record<string, any> = {};
+
+    const num_today = num_tasks_today(src_task_list, task_history, log);
+    const weights = calc_weights(src_task_list, task_history, log);
+
+    let the_chosen = new Set<Task>();
     for (let i = 0; i < num_today; i++) {
-        const entries = Object.entries(src_task_list)
-                              .sort(() => Math.random() - 0.5);
+        let entries = Object.entries(weights)
+                            .sort(() => Math.random() - 0.5);
         const total_weight = Object.values(weights)
                                    .reduce((total, number) => total + number, 0);
         const random = Math.random() * total_weight;
 
         let cumulative_weight = 0;
-        for (const [task_id, weight] of entries) {
-            cumulative_weight =+ weight;
-            if (random < cumulative_weight) {
-                const index = src_task_list.findIndex((task: Task) => task.id === task_id);
-                if (index === -1) throw new Error("something fucked up");
+        let index = -1;
+        while (cumulative_weight < random) {
+            index++;
+            cumulative_weight += entries[Math.floor(index)][1]
+        }
 
-                // move from tasks into rv
-                returned_tasks.push(src_task_list.splice(index, 1)[0])
-                break;
-            }
+        if (index === -1) {
+            break;
+        }
+
+        if (index < Object.entries(weights).length) {
+            const id = entries[index][0]
+            Object.values(src_task_list.data).forEach(task => {
+                if (task.id === id) {
+                    the_chosen.add(task);
+                }
+            });
+            delete weights[id];
+        } else {
+            console.log('index out of range')
         }
     }
-    return returned_tasks;
+    return [the_chosen, log];
 }
 
 
-function num_tasks_today(src_task_list: Array<Task>, tasks_completed: Array<Task>): number {
+function num_tasks_today(
+    src_task_list: SrcTaskList, 
+    task_history: TaskHistory, 
+    log: Record<string, any>
+): number {
     /** 
      * @param src_task_list - an array of Task objects. Each Task object is 
      *                        unique has a `per_week` property representing the 
@@ -70,17 +94,14 @@ function num_tasks_today(src_task_list: Array<Task>, tasks_completed: Array<Task
      * The CYCLE constant is a Number used in the calculation and represents 
      * the number of days in the current cycle (e.g. 7 for a weekly cycle).
      */
-
-    const target_avg = src_task_list.map(task => task.per_week)
-                                    .reduce((total, number) => total + number, 0)
-                                    / CYCLE;
-    let current_avg = tasks_completed.length / CYCLE;
+    const target_avg = src_task_list.total_per_week / CYCLE;
+    const current_avg = task_history.data.length / CYCLE;
 
     let num_today = 0;
     if (current_avg === 0) {
         num_today = target_avg * target_avg;
     } else {
-        num_today = target_avg / current_avg;
+        num_today = target_avg * (target_avg / current_avg);
     }
 
     /**
@@ -91,19 +112,33 @@ function num_tasks_today(src_task_list: Array<Task>, tasks_completed: Array<Task
      *   4 - 75% of the time
      */
     const remainder = num_today % 1;
-    num_today = Math.floor(num_today);
+    const num_today_floor = Math.floor(num_today);
     const random = Math.random();
+
+    const rv = num_today_floor + Number(remainder > random);
+    log['num_tasks_today'] = {
+        target_avg,
+        current_avg,
+        num_today: {
+            num_today,
+            final: rv
+        },
+    }
     
-    return num_today + Number(remainder > random)
+    return rv;
 }
 
 
-function calc_weights(src_task_list: Array<Task>, tasks_completed: Array<Task>): Weights {
+function calc_weights(
+    src_task_list: SrcTaskList, 
+    task_history: TaskHistory, 
+    log: Record<string, any>
+): Weights {
     /**
      * The calc_weights function calculates the weights for a list of tasks.
      *
-     * @param src_task_list - An array of Task objects representing the list of 
-     *                        tasks to calculate weights for.
+     * @param src_task_list - An array of unique Task objects representing the 
+     *                        list of tasks to calculate weights for.
      *                
      * @param tasks_completed - An array of Task objects representing the tasks 
      *                          that have been completed.
@@ -128,18 +163,27 @@ function calc_weights(src_task_list: Array<Task>, tasks_completed: Array<Task>):
      *     base weight and multiplicative factor, and stored in the Record 
      *     object with the task's ID as the key. The Record object is then returned.
      */
-    let rv: Weights = {};
-    src_task_list.forEach((task: Task) => {
-        const num_times_completed = tasks_completed.filter(cmpltd_task => cmpltd_task.id === task.id).length;
-        const base = num_times_completed > 0 ?
-                     task.per_week - (task.per_week - num_times_completed) :
-                     task.per_week * 2;
-        const mult = num_times_completed > 0 ? 
-                     task.per_week / num_times_completed :
-                     task.per_week * 2;
+    log['calc_weights'] = {}
+    let weights: Weights = {};
+    Object.values(src_task_list.data).forEach(task => {
+        if (task.active) {
+            const num_times_completed = task_history.occurrences[task.id]
 
-        rv[task.id] = base * mult;
+            const base = num_times_completed > 0 ?
+                         task.per_week - (num_times_completed - task.per_week) :
+                         task.per_week * 2;
+            const mult = num_times_completed > 0 ? 
+                         task.per_week / num_times_completed :
+                         task.per_week * 2;
+
+            log['calc_weights'][task.name] = String(base * mult) +
+                                             ' = ' + 
+                                             String(base) + 
+                                             ' * ' + 
+                                             String(mult);
+            weights[task.id] = base * mult;
+        }
     });
-    return rv;
+    return weights;
 }
 
