@@ -98,9 +98,9 @@ export class NotionHandler {
     }
 
     async add_task(tasks: Array<Task>) {
-        let response: any[] = await Promise.all(
+        return await Promise.all(
             tasks.map(async task => {
-                const resp = await this.client.pages.create({
+                return await this.client.pages.create({
                     parent: {
                         database_id: this.databases.tasks
                     },
@@ -131,11 +131,9 @@ export class NotionHandler {
                             ]
                         }
                     }
-                })
-                return resp;
+                });
             })
         )
-        return response;
     }
 
 
