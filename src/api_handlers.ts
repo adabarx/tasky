@@ -98,42 +98,30 @@ export class NotionHandler {
     }
 
     async add_task(tasks: Array<Task>) {
-        return await Promise.all(
-            tasks.map(async task => {
-                return await this.client.pages.create({
-                    parent: {
-                        database_id: this.databases.tasks
+        return await Promise.all(tasks.map(async task => {
+            return await this.client.pages.create({
+                parent: {
+                    database_id: this.databases.tasks
+                },
+                properties: {
+                    Name: {
+                        type: 'title',
+                        title: [ {
+                            type: 'text',
+                            text: { content: task.name }
+                        } ]
                     },
-                    properties: {
-                        Name: {
-                            type: 'title',
-                            title: [
-                                {
-                                    type: 'text',
-                                    text: {
-                                        content: task.name
-                                    }
-                                }
-                            ]
-                        },
-                        Status: {
-                            type: 'status',
-                            status: {
-                                name: 'Daily Task',
-                            }
-                        },
-                        Focus: {
-                            type: 'relation',
-                            relation: [
-                                {
-                                    id: task.id
-                                }
-                            ]
-                        }
+                    Status: {
+                        type: 'status',
+                        status: { name: 'Daily Task', }
+                    },
+                    Focus: {
+                        type: 'relation',
+                        relation: [ { id: task.id } ]
                     }
-                });
-            })
-        )
+                }
+            });
+        }))
     }
 
 
@@ -144,20 +132,16 @@ export class NotionHandler {
                 and: [
                     {
                         timestamp: "created_time",
-                        created_time: {
-                            "past_week": {}
-                        }
+                        created_time: { "past_week": {} }
                     },
                     {
                         or: Object.keys(src_task_list.data).map(id => {
                             return {
                                 property: "Focus",
-                                relation: {
-                                    contains: id
-                                }
+                                relation: { contains: id }
                             } 
                         })
-                    }
+                    },
                 ]
             }
         });
