@@ -41,7 +41,7 @@ app.get('/today', async (_req: Request, res: Response) => {
         log,
         history,
         src_task_list,
-        the_chosen: [...the_chosen], 
+        the_chosen, 
         notion_resp 
     };
     mongo_logger?.log(resp);
