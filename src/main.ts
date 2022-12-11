@@ -1,9 +1,22 @@
-import { Application } from "https://deno.land/x/oak/mod.ts";
+import { Application, Router } from "https://deno.land/x/oak@v11.1.0/mod.ts";
 
 const app = new Application();
 
-app.use((ctx: any) => {
+app.use((ctx) => {
   ctx.response.body = "Hello World!";
 });
 
-await app.listen({ port: 8000 });
+const router = new Router();
+router
+    .get('/', (ctx) => {
+        ctx.response.body = "Hi Router";
+    })
+    .get('/daily-tasks', (ctx) => {
+        ctx.response.body = "generate daily tasks"
+    })
+    .get('/work-out', (ctx) => {
+        ctx.response.body = "generate work out"
+    })
+
+await app.listen({ port: 8000 })
+
