@@ -65,6 +65,12 @@ export type NotionHandlerData = {
 export type NotionDatabases = {
     focus: string,
     tasks: string,
+    log: string,
+}
+export type NotionLogItem = {
+    name: string,
+    notes: string,
+    tags: string[],
 }
 
 export class NotionHandler {
@@ -85,7 +91,7 @@ export class NotionHandler {
             return null
         }
         // check for db fields
-        const db_fields = ['focus', 'tasks'];
+        const db_fields = ['focus', 'tasks', 'log'];
         for (const field of db_fields) {
             if (!('databases' in data) || 
                 !(field in data.databases) || 
@@ -95,6 +101,29 @@ export class NotionHandler {
             }
         }
         return new NotionHandler(data as NotionHandlerData)
+    }
+
+    async log_item(item: NotionLogItem) {
+        return await this.client.pages.create({
+            parent: { database_id: this.databases.log },
+            properties: {
+                Name: {
+                    title: [ {
+                        type: 'text',
+                        text: { content: item.name }
+                    } ]
+                },
+                Notes: {
+                    rich_text: [ {
+                        type: "text",
+                        text: { content: item.notes }
+                    } ]
+                },
+                Tags: {
+                    multi_select: item.tags.map(tag => { return { name: tag } })
+                }
+            }
+        })
     }
 
     async add_task(tasks: Array<Task>) {
