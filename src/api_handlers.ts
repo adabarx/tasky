@@ -119,7 +119,7 @@ export class NotionHandler {
             'thu': 4,
             'fri': 5,
             'sat': 6,
-            'sun': 7,
+            'sun': 0,
         }
         const resp = await this.client.databases.query({
             database_id: this.source
@@ -143,21 +143,21 @@ export class NotionHandler {
                 // Does Days_per_week exist?
                 if ('Sessions' in page.properties && 'number' in page.properties.Sessions) {
                     current_page['per_week'] = page.properties
-                                   .Sessions
-                                   .number || 0;
+                                                   .Sessions
+                                                   .number || 0;
                 } else {
                     return;
                 }
                 // Is it active today?
                 if ('Days_off' in page.properties && 'multi_select' in page.properties.Days_off) {
                     current_page['days_off'] = page.properties
-                                         .Days_off
-                                         .multi_select
-                                         .map((day: any) => {
-                                             if ('name' in day) {
-                                                 return weekday_map[day.name]
-                                             }
-                                         });
+                                                   .Days_off
+                                                   .multi_select
+                                                   .map((day: any) => {
+                                                       if ('name' in day) {
+                                                           return weekday_map[day.name]
+                                                       }
+                                                   });
 
                     current_page['active'] = true;
                     if (current_page['days_off'].includes(datetime().toZonedTime('America/Chicago').weekDay())) {
