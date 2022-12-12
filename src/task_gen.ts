@@ -1,6 +1,6 @@
-import { config } from "https://deno.land/x/dotenv/mod.ts";
+import { config } from "https://deno.land/x/dotenv@v3.2.0/mod.ts";
 
-const CYCLE = Number(config().DAYS_PER_WEEK) || 7;
+const CYCLE = Number(config().DAYS_PER_CYCLE) || 7;
 
 
 export type Weights = Record<string, number>;
