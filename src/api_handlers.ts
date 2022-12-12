@@ -1,5 +1,6 @@
 import { datetime } from "https://deno.land/x/ptera@v1.0.2/mod.ts";
-import { Client } from 'npm:@notionhq/client';
+import { Client } from "https://deno.land/x/notion_sdk/src/mod.ts";
+
 
 import { Task, SrcTaskList, TaskHistory } from './task_gen.ts';
 
