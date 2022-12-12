@@ -1,5 +1,5 @@
 import { datetime } from "https://deno.land/x/ptera@v1.0.2/mod.ts";
-import { Client } from "https://deno.land/x/notion_sdk/src/mod.ts";
+import { Client } from "https://deno.land/x/notion_sdk@v1.0.4/src/mod.ts";
 
 
 import { Task, SrcTaskList, TaskHistory } from './task_gen.ts';
@@ -160,7 +160,7 @@ export class NotionHandler {
                                          });
 
                     current_page['active'] = true;
-                    if (current_page['days_off'].includes(datetime().weekDay())) {
+                    if (current_page['days_off'].includes(datetime().toZonedTime('America/Chicago').weekDay())) {
                         current_page['active'] = false;
                     }
                 }
