@@ -1,4 +1,6 @@
-const CYCLE: number = Number(process.env.DAYS_PER_WEEK) || 7;
+import { config } from "https://deno.land/x/dotenv/mod.ts";
+
+const CYCLE = Number(config().DAYS_PER_WEEK) || 7;
 
 
 export type Weights = Record<string, number>;
@@ -64,14 +66,14 @@ export function the_choosening(
      * randomly selects tasks to be completed today based on their weight. The 
      * selected tasks are removed from the src_task_list and added to the returned array.
      */ 
-    let log: Record<string, any> = {};
+    const log: Record<string, any> = {};
 
     const num_today = num_tasks_today(src_task_list, task_history, log);
     const weights = calc_weights(src_task_list, task_history, log);
 
-    let the_chosen = new Set<Task>();
+    const the_chosen = new Set<Task>();
     for (let i = 0; i < num_today; i++) {
-        let entries = Object.entries(weights)
+        const entries = Object.entries(weights)
                             .sort(() => Math.random() - 0.5);
         const total_weight = Object.values(weights)
                                    .reduce((total, number) => total + number, 0);
