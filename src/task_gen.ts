@@ -196,8 +196,9 @@ function calc_weights(
      *     base weight and multiplicative factor, and stored in the Record 
      *     object with the task's ID as the key. The Record object is then returned.
      */
+
     log['calc_weights'] = {}
-    let weights: Weights = {};
+    const weights: Weights = {};
     Object.values(src_task_list.data).forEach(task => {
         if (task.active) {
             const num_times_completed = task_history.occurrences[task.id]

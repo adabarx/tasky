@@ -45,6 +45,33 @@ export class NotionHandler {
     }
 
 
+    async add_exercises(tasks: Array<Task>) {
+        return await Promise.all(tasks.map(async task => {
+            return await this.client.pages.create({
+                parent: {
+                    database_id: this.output
+                },
+                properties: {
+                    Name: {
+                        type: 'title',
+                        title: [ {
+                            type: 'text',
+                            text: { content: task.name }
+                        } ]
+                    },
+                    Status: {
+                        type: 'status',
+                        status: { name: 'Exercise', }
+                    },
+                    exc_src: {
+                        type: 'relation',
+                        relation: [ { id: task.id } ]
+                    }
+                }
+            });
+        }))
+    }
+
     async add_tasks(tasks: Array<Task>) {
         return await Promise.all(tasks.map(async task => {
             return await this.client.pages.create({
@@ -73,7 +100,7 @@ export class NotionHandler {
     }
 
 
-    async query_history(src_task_list: SrcTaskList): Promise<TaskHistory> {
+    async query_history(src_task_list: SrcTaskList, src_name: 'dt_src' | 'exc_src'): Promise<TaskHistory> {
         const resp = await this.client.databases.query({
             database_id: this.output,
             filter: {
@@ -85,7 +112,7 @@ export class NotionHandler {
                     {
                         or: Object.keys(src_task_list.data).map(id => {
                             return {
-                                property: "dt_src",
+                                property: src_name,
                                 relation: { contains: id }
                             } 
                         })
@@ -97,14 +124,11 @@ export class NotionHandler {
         const history: Array<Task> = resp.results.map(page => {
             if (
                 'properties' in page &&
-                'dt_src' in page.properties &&
-                'relation' in page.properties.dt_src
+                src_name in page.properties &&
+                'relation' in page.properties[src_name] &&
+                typeof page.properties[src_name].relation[0] === 'object'
             ) {
-                const task_id = page.properties
-                                    .dt_src
-                                    .relation[0]
-                                    .id
-                return src_task_list.data[task_id]
+                return src_task_list.data[page.properties[src_name].relation[0].id]
             }
         }).filter((task): task is Task => task !== undefined);
         return new TaskHistory(history);
@@ -149,6 +173,7 @@ export class NotionHandler {
                     return;
                 }
                 // Is it active today?
+                current_page['days_off'] = []
                 if ('Days_off' in page.properties && 'multi_select' in page.properties.Days_off) {
                     current_page['days_off'] = page.properties
                                                    .Days_off
@@ -158,17 +183,14 @@ export class NotionHandler {
                                                            return weekday_map[day.name]
                                                        }
                                                    });
-
-                    current_page['active'] = true;
-                    if (current_page['days_off'].includes(datetime().toZonedTime('America/Chicago').weekDay())) {
-                        current_page['active'] = false;
-                    }
                 }
-
+                current_page['active'] = true;
+                if (current_page['days_off'].includes(datetime().toZonedTime('America/Chicago').weekDay())) {
+                    current_page['active'] = false;
+                }
                 task_set.add(current_page as Task)
             }
         })
-
         return new SrcTaskList(task_set)
     }
 
