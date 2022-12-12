@@ -1,14 +1,13 @@
+import "https://deno.land/x/dotenv@v3.2.0/load.ts";
 import { Application, Router } from "https://deno.land/x/oak@v11.1.0/mod.ts";
-import { config } from "https://deno.land/x/dotenv@v3.2.0/mod.ts";
-const c = config({ safe: true });
 
 import { NotionHandler } from "./api_handlers.ts"
 import { TaskHistory, SrcTaskList, the_choosening } from "./task_gen.ts"
 
 const notion_handler = NotionHandler.from_obj({
-    token: c.NOTION_TOKEN,
-    source: c.SOURCE_ID,
-    output: c.OUTPUT_ID,
+    token: Deno.env.get('NOTION_TOKEN') || 'lol',
+    source: Deno.env.get('SOURCE_ID') || 'lol',
+    output: Deno.env.get('OUTPUT_ID') || 'lol',
 })
 
 const router = new Router();
