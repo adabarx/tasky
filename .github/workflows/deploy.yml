@@ -19,5 +19,5 @@ jobs:
       - name: Deploy to Deno Deploy
         uses: denoland/deployctl@v1
         with:
-          project: my-project # the name of the project on Deno Deploy
-          entrypoint: main.ts # the entrypoint to deploy
+          project: tasky
+          entrypoint: src/main.ts # the entrypoint to deploy
