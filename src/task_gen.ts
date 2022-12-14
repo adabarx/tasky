@@ -193,33 +193,33 @@ function calc_weights(
     log['calc_weights'] = {}
     const weights: Weights = {};
     Object.values(src_task_list.data).forEach(task => {
-    // if (task.active) {
-        const seed = calc_seed(task)
-        const occurrences = task_history.occurrences[task.id] || 0;
-        const total = occurrences + seed
+        if (task.active) {
+            const seed = calc_seed(task)
+            const occurrences = task_history.occurrences[task.id] || 0;
+            const total = occurrences + seed
 
-        const base = total > 0 ?
-                     task.per_week - (total - task.per_week) :
-                     task.per_week * 2;
-        const mult = total > 0 ? 
-                     task.per_week / total :
-                     task.per_week * 2;
+            const base = total > 0 ?
+                         task.per_week - (total - task.per_week) :
+                         task.per_week * 2;
+            const mult = total > 0 ? 
+                         task.per_week / total :
+                         task.per_week * 2;
 
-        log.calc_weights[task.name] = {
-            occurrences: {
-                base: occurrences,
-                seed,
-                total,
-            },
-            final_calc: {
-                base,
-                mult,
-                total: base * mult,
-            },
+            log.calc_weights[task.name] = {
+                occurrences: {
+                    base: occurrences,
+                    seed,
+                    total,
+                },
+                final_calc: {
+                    base,
+                    mult,
+                    total: base * mult,
+                },
+            }
+
+            weights[task.id] = base * mult;
         }
-
-        weights[task.id] = base * mult;
-    // }
     });
     return weights;
 }
