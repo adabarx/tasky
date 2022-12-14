@@ -25,7 +25,7 @@ router
             log,
             history,
             src_task_list,
-            the_chosen, 
+            the_chosen: [...the_chosen], 
             notion_resp 
         };
         ctx.response.body = resp
@@ -45,7 +45,7 @@ router
             log,
             history,
             src_task_list,
-            the_chosen, 
+            the_chosen: [...the_chosen], 
             notion_resp 
         };
         ctx.response.body = resp

@@ -1,3 +1,4 @@
+import { z } from "https://deno.land/x/zod/mod.ts";
 import { datetime } from "https://deno.land/x/ptera@v1.0.2/mod.ts";
 import { Client } from "https://deno.land/x/notion_sdk@v1.0.4/src/mod.ts";
 
@@ -38,7 +39,7 @@ export class NotionHandler {
         const db_fields = ['source', 'output'];
         for (const field of db_fields) {
             if (!(field in data) || typeof data[field] !== 'string') {
-                throw new Error('incomplete database list: no NotionHandler')
+                throw new Error(`NotionHandler - incomplete database list`)
             }
         }
         return new NotionHandler(data as NotionHandlerData)
@@ -151,45 +152,69 @@ export class NotionHandler {
 
         const task_set = new Set<Task>();
 
+        const pageValidator = z.object({
+            id: z.string(),
+            properties: z.object({
+                Name: z.object({
+                    title: z.object({
+                        plain_text: z.string()
+                    }).array().length(1)
+                }),
+                Sessions: z.object({
+                    number: z.number()
+                }),
+                Days_off: z.object({
+                    multi_select: z.object({
+                        name: z.string()
+                    }).array()
+                }),
+                Started: z.object({
+                    date: z.object({
+                        start: z.string()
+                    })
+                })
+            })
+        })
         resp.results.forEach(page => {
-            const current_page: Record<string, any> = {};
-            current_page['id'] = page.id;
-            if ('properties' in page) {
-                // Does the title exits?
-                if ('Name' in page.properties && 'title' in page.properties.Name) {
-                    current_page['name'] = page.properties
-                                               .Name
-                                               .title[0]
-                                               .plain_text;
-                } else {
-                    return;
-                }
-                // Does Days_per_week exist?
-                if ('Sessions' in page.properties && 'number' in page.properties.Sessions) {
-                    current_page['per_week'] = page.properties
-                                                   .Sessions
-                                                   .number || 0;
-                } else {
-                    return;
-                }
-                // Is it active today?
-                current_page['days_off'] = []
-                if ('Days_off' in page.properties && 'multi_select' in page.properties.Days_off) {
-                    current_page['days_off'] = page.properties
-                                                   .Days_off
-                                                   .multi_select
-                                                   .map((day: any) => {
-                                                       if ('name' in day) {
-                                                           return weekday_map[day.name]
-                                                       }
-                                                   });
-                }
-                current_page['active'] = true;
-                if (current_page['days_off'].includes(datetime().toZonedTime('America/Chicago').weekDay())) {
-                    current_page['active'] = false;
-                }
-                task_set.add(current_page as Task)
+            const val_resp = pageValidator.safeParse(page);
+            if (!val_resp.success) {
+                console.log(val_resp.error);
+                return
             }
+
+            const current_page: Record<string, string | number | boolean | Date> = {};
+            
+            current_page['id'] = val_resp.data.id;
+
+            current_page['name'] = 
+                val_resp.data.properties
+                    .Name
+                    .title[0]
+                    .plain_text;
+
+            current_page['per_week'] = 
+                val_resp.data.properties
+                    .Sessions
+                    .number || 0;
+
+            current_page['active'] = 
+                !val_resp.data.properties
+                    .Days_off
+                    .multi_select
+                    .map((day) => {
+                        if ('name' in day) {
+                            return weekday_map[day.name]
+                        }
+                    })
+                    .includes(datetime().toZonedTime('America/Chicago').weekDay())
+
+            current_page['started'] =
+                val_resp.data.properties
+                    .Started
+                    .date
+                    .start
+
+            task_set.add(current_page as Task)
         })
         return new SrcTaskList(task_set)
     }
