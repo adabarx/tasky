@@ -1,13 +1,16 @@
-const CYCLE: number = Number(process.env.DAYS_PER_WEEK) || 7;
+import "https://deno.land/x/dotenv@v3.2.0/load.ts";
+import { datetime, diffInDays } from "https://deno.land/x/ptera@v1.0.2/mod.ts";
 
+const CYCLE = Number(Deno.env.get('DAYS_PER_CYCLE')) || 7;
 
 export type Weights = Record<string, number>;
 
 export type Task = {
-    id:       string,
-    name:     string,
-    per_week: number,
-    active:   boolean,
+    id:       string;
+    name:     string;
+    per_week: number;
+    active:   boolean;
+    started:  Date;
 }
 
 export class TaskHistory {
@@ -64,14 +67,14 @@ export function the_choosening(
      * randomly selects tasks to be completed today based on their weight. The 
      * selected tasks are removed from the src_task_list and added to the returned array.
      */ 
-    let log: Record<string, any> = {};
+    const log: Record<string, any> = {};
 
     const num_today = num_tasks_today(src_task_list, task_history, log);
     const weights = calc_weights(src_task_list, task_history, log);
 
-    let the_chosen = new Set<Task>();
+    const the_chosen = new Set<Task>();
     for (let i = 0; i < num_today; i++) {
-        let entries = Object.entries(weights)
+        const entries = Object.entries(weights)
                             .sort(() => Math.random() - 0.5);
         const total_weight = Object.values(weights)
                                    .reduce((total, number) => total + number, 0);
@@ -131,23 +134,14 @@ function num_tasks_today(
 
     let num_today = 0;
     if (current_avg === 0) {
-        num_today = target_avg * target_avg;
+        num_today = target_avg;
     } else {
         num_today = target_avg * (target_avg / current_avg);
     }
 
-    /**
-     * randomly round rv up or down weighted by the decimal remainder
-     * example: num_today == 3.75
-     * output:
-     *   3 - 25% of the time
-     *   4 - 75% of the time
-     */
-    const remainder = num_today % 1;
-    const num_today_floor = Math.floor(num_today);
-    const random = Math.random();
+    num_today = Math.min(num_today, target_avg + 1)
 
-    const rv = num_today_floor + Number(remainder > random);
+    const rv = random_round(num_today)
     log['num_tasks_today'] = {
         target_avg,
         current_avg,
@@ -195,27 +189,59 @@ function calc_weights(
      *     base weight and multiplicative factor, and stored in the Record 
      *     object with the task's ID as the key. The Record object is then returned.
      */
+
     log['calc_weights'] = {}
-    let weights: Weights = {};
+    const weights: Weights = {};
     Object.values(src_task_list.data).forEach(task => {
-        if (task.active) {
-            const num_times_completed = task_history.occurrences[task.id]
+    // if (task.active) {
+        const seed = calc_seed(task)
+        const occurrences = task_history.occurrences[task.id] || 0;
+        const total = occurrences + seed
 
-            const base = num_times_completed > 0 ?
-                         task.per_week - (num_times_completed - task.per_week) :
-                         task.per_week * 2;
-            const mult = num_times_completed > 0 ? 
-                         task.per_week / num_times_completed :
-                         task.per_week * 2;
+        const base = total > 0 ?
+                     task.per_week - (total - task.per_week) :
+                     task.per_week * 2;
+        const mult = total > 0 ? 
+                     task.per_week / total :
+                     task.per_week * 2;
 
-            log['calc_weights'][task.name] = String(base * mult) +
-                                             ' = ' + 
-                                             String(base) + 
-                                             ' * ' + 
-                                             String(mult);
-            weights[task.id] = base * mult;
+        log.calc_weights[task.name] = {
+            occurrences: {
+                base: occurrences,
+                seed,
+                total,
+            },
+            final_calc: {
+                base,
+                mult,
+                total: base * mult,
+            },
         }
+
+        weights[task.id] = base * mult;
+    // }
     });
     return weights;
+}
+
+function calc_seed(task: Task) {
+    const days_since_start = Math.floor(diffInDays(datetime(), datetime(task.started)))
+    if (days_since_start >= 7) {
+        return 0
+    }
+
+    const mult = (7 - days_since_start) / 7
+    return Math.round(task.per_week * mult);
+}
+
+function random_round(num: number) {
+    /**
+     * randomly round rv up or down weighted by the decimal remainder
+     * example: num == 3.75
+     * output:
+     *   3 - 25% of the time
+     *   4 - 75% of the time
+     */
+    return Math.floor(num) + Number((num % 1) > Math.random());
 }
 
