@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   push:
-    branches: [deno]
+    branches: [main]
 
 jobs:
   deploy:
@@ -20,5 +20,5 @@ jobs:
         uses: denoland/deployctl@v1
         with:
           project: tasky
-          entrypoint: main.ts # the entrypoint to deploy
+          entrypoint: main.ts
           root: src

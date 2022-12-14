@@ -75,7 +75,7 @@ export function the_choosening(
     const the_chosen = new Set<Task>();
     for (let i = 0; i < num_today; i++) {
         const entries = Object.entries(weights)
-                            .sort(() => Math.random() - 0.5);
+                              .sort(() => Math.random() - 0.5);
         const total_weight = Object.values(weights)
                                    .reduce((total, number) => total + number, 0);
         const random = Math.random() * total_weight;
@@ -134,24 +134,24 @@ function num_tasks_today(
 
     let num_today = 0;
     if (current_avg === 0) {
-        num_today = target_avg;
+        num_today = target_avg + 1;
     } else {
         num_today = target_avg * (target_avg / current_avg);
     }
 
     num_today = Math.min(num_today, target_avg + 1)
 
-    const rv = random_round(num_today)
+    const rvs = random_round(num_today)
     log['num_tasks_today'] = {
         target_avg,
         current_avg,
         num_today: {
             num_today,
-            final: rv
+            final: rvs
         },
     }
     
-    return rv;
+    return rvs;
 }
 
 
