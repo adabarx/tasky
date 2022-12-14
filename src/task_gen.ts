@@ -141,17 +141,17 @@ function num_tasks_today(
 
     num_today = Math.min(num_today, target_avg + 1)
 
-    const rvs = random_round(num_today)
+    const rv = random_round(num_today)
     log['num_tasks_today'] = {
         target_avg,
         current_avg,
         num_today: {
             num_today,
-            final: rvs
+            final: rv
         },
     }
     
-    return rvs;
+    return rv;
 }
 
 
