@@ -64,6 +64,10 @@ export class NotionHandler {
                         type: 'status',
                         status: { name: 'Exercise', }
                     },
+                    Tags: {
+                        type: 'multi_select',
+                        multi_select: task.tags.map(tag => { return { name: tag } }),
+                    },
                     exc_src: {
                         type: 'relation',
                         relation: [ { id: task.id } ]
@@ -90,6 +94,10 @@ export class NotionHandler {
                     Status: {
                         type: 'status',
                         status: { name: 'Daily Task', }
+                    },
+                    Tags: {
+                        type: 'multi_select',
+                        multi_select: task.tags.map(tag => { return { name: tag } }),
                     },
                     dt_src: {
                         type: 'relation',
@@ -160,10 +168,20 @@ export class NotionHandler {
                         plain_text: z.string()
                     }).array().length(1)
                 }),
+                Tags: z.object({
+                    multi_select: z.object({
+                        name: z.string()
+                    }).array()
+                }),
                 Sessions: z.object({
                     number: z.number()
                 }),
                 Days_off: z.object({
+                    multi_select: z.object({
+                        name: z.string()
+                    }).array()
+                }),
+                Days_on: z.object({
                     multi_select: z.object({
                         name: z.string()
                     }).array()
@@ -182,39 +200,41 @@ export class NotionHandler {
                 return
             }
 
-            const current_page: Record<string, string | number | boolean | Date> = {};
+            task_set.add({
+                id: val_resp.data.id,
+
+                name: val_resp.data.properties
+                        .Name
+                            .title[0]
+                                .plain_text,
+
+                tags: val_resp.data.properties
+                        .Tags
+                            .multi_select
+                            .map((day) => day.name),
+
+                per_week: val_resp.data.properties
+                        .Sessions
+                            .number || 0,
+
+                active: !val_resp.data.properties
+                        .Days_off
+                            .multi_select
+                            .map((day) => weekday_map[day.name])
+                            .includes(datetime().toZonedTime('America/Chicago').weekDay()),
+
+                forced_today: val_resp.data.properties
+                        .Days_on
+                            .multi_select
+                            .map((day) => weekday_map[day.name])
+                            .includes(datetime().toZonedTime('America/Chicago').weekDay()),
+
+                started: new Date(val_resp.data.properties
+                          .Started
+                              .date
+                                  .start),
+            } as Task)
             
-            current_page['id'] = val_resp.data.id;
-
-            current_page['name'] = 
-                val_resp.data.properties
-                    .Name
-                    .title[0]
-                    .plain_text;
-
-            current_page['per_week'] = 
-                val_resp.data.properties
-                    .Sessions
-                    .number || 0;
-
-            current_page['active'] = 
-                !val_resp.data.properties
-                    .Days_off
-                    .multi_select
-                    .map((day) => {
-                        if ('name' in day) {
-                            return weekday_map[day.name]
-                        }
-                    })
-                    .includes(datetime().toZonedTime('America/Chicago').weekDay())
-
-            current_page['started'] =
-                val_resp.data.properties
-                    .Started
-                    .date
-                    .start
-
-            task_set.add(current_page as Task)
         })
         return new SrcTaskList(task_set)
     }

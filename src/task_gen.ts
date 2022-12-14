@@ -6,11 +6,13 @@ const CYCLE = Number(Deno.env.get('DAYS_PER_CYCLE')) || 7;
 export type Weights = Record<string, number>;
 
 export type Task = {
-    id:       string;
-    name:     string;
-    per_week: number;
-    active:   boolean;
-    started:  Date;
+    id:           string;
+    name:         string;
+    tags:         string[]; 
+    per_week:     number;
+    active:       boolean;
+    forced_today: boolean;
+    started:      Date;
 }
 
 export class TaskHistory {
@@ -69,15 +71,15 @@ export function the_choosening(
      */ 
     const log: Record<string, any> = {};
 
-    const num_today = num_tasks_today(src_task_list, task_history, log);
+    const forced_today = Object.values(src_task_list.data).filter(task => task.forced_today);
+    const num_today = num_tasks_today(src_task_list, task_history, log) - forced_today.length;
     const weights = calc_weights(src_task_list, task_history, log);
 
-    const the_chosen = new Set<Task>();
+    const the_chosen = new Set<Task>(forced_today);
     for (let i = 0; i < num_today; i++) {
-        const entries = Object.entries(weights)
-                              .sort(() => Math.random() - 0.5);
-        const total_weight = Object.values(weights)
-                                   .reduce((total, number) => total + number, 0);
+        // Run a weighted lottery to semi-randomly pick todays tasks
+        const entries = Object.entries(weights).sort(() => Math.random() - 0.5);
+        const total_weight = Object.values(weights).reduce((total, number) => total + number, 0);
         const random = Math.random() * total_weight;
 
         let cumulative_weight = 0;
@@ -88,7 +90,7 @@ export function the_choosening(
         }
 
         if (index === -1) {
-            break;
+            break; // No more tasks in lotto
         }
 
         if (index < Object.entries(weights).length) {
@@ -193,7 +195,7 @@ function calc_weights(
     log['calc_weights'] = {}
     const weights: Weights = {};
     Object.values(src_task_list.data).forEach(task => {
-        if (task.active) {
+        if (task.active && !task.forced_today) {
             const seed = calc_seed(task)
             const occurrences = task_history.occurrences[task.id] || 0;
             const total = occurrences + seed
