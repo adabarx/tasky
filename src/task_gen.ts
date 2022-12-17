@@ -1,15 +1,18 @@
+// deno-lint-ignore-file no-explicit-any
 import "https://deno.land/x/dotenv@v3.2.0/load.ts";
 import { datetime, diffInDays } from "https://deno.land/x/ptera@v1.0.2/mod.ts";
 
 const CYCLE = Number(Deno.env.get('DAYS_PER_CYCLE')) || 7;
 
 export type Weights = Record<string, number>;
+export type TimeOfDay = 'morning' | 'day' | 'night';
 
 export type Task = {
     id:           string;
     name:         string;
     tags:         string[]; 
     per_week:     number;
+    time_of_day:  TimeOfDay[];
     active:       boolean;
     forced_today: boolean;
     started:      Date;

@@ -55,10 +55,10 @@ export class NotionHandler {
                 properties: {
                     Name: {
                         type: 'title',
-                        title: [ {
+                        title: [{
                             type: 'text',
                             text: { content: task.name }
-                        } ]
+                        }]
                     },
                     Status: {
                         type: 'status',
@@ -66,15 +66,15 @@ export class NotionHandler {
                     },
                     Tags: {
                         type: 'multi_select',
-                        multi_select: task.tags.map(tag => { return { name: tag } }),
+                        multi_select: task.tags.map(tag => { return { name: tag }; }),
                     },
                     exc_src: {
                         type: 'relation',
-                        relation: [ { id: task.id } ]
+                        relation: [{ id: task.id }]
                     }
                 }
             });
-        }))
+        }));
     }
 
     async add_tasks(tasks: Array<Task>) {
@@ -95,9 +95,13 @@ export class NotionHandler {
                         type: 'status',
                         status: { name: 'Daily Task', }
                     },
+                    time_of_day: {
+                        type: 'multi_select',
+                        multi_select: task.time_of_day.map(time => ({ name: time })),
+                   },
                     Tags: {
                         type: 'multi_select',
-                        multi_select: task.tags.map(tag => { return { name: tag } }),
+                        multi_select: task.tags.map(tag => ({ name: tag })),
                     },
                     dt_src: {
                         type: 'relation',
@@ -105,7 +109,7 @@ export class NotionHandler {
                     }
                 }
             });
-        }))
+        }));
     }
 
 
@@ -181,6 +185,11 @@ export class NotionHandler {
                         name: z.string()
                     }).array()
                 }),
+                time_of_day: z.object({
+                    multi_select: z.object({
+                        name: z.enum(['morning', 'day', 'night'])
+                    }).array()
+                }),
                 Days_on: z.object({
                     multi_select: z.object({
                         name: z.string()
@@ -216,6 +225,11 @@ export class NotionHandler {
                 per_week: val_resp.data.properties
                         .Sessions
                             .number || 0,
+
+                time_of_day: val_resp.data.properties
+                        .time_of_day
+                            .multi_select
+                            .map(time => time.name),
 
                 active: !val_resp.data.properties
                         .Days_off
