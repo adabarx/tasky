@@ -10,6 +10,7 @@ export type NotionHandlerData = {
     token: string,
     source: string,
     output: string,
+    log: string
 }
 export type NotionLogItem = {
     name: string,
@@ -21,6 +22,7 @@ export class NotionHandler {
     client: Client;
     source: string;
     output: string;
+    log: string;
 
     constructor(data: NotionHandlerData) {
         this.client = new Client({
@@ -28,21 +30,18 @@ export class NotionHandler {
         });
         this.source = data.source
         this.output = data.output
+        this.log = data.log
     }
 
     static from_obj(data: Record<string, string>): NotionHandler | never {
-        // check for token
-        if (typeof data.token !== 'string') {
-            throw new Error('token required: no NotionHandler')
-        }
         // check for db fields
-        const db_fields = ['source', 'output'];
-        for (const field of db_fields) {
-            if (!(field in data) || typeof data[field] !== 'string') {
-                throw new Error(`NotionHandler - incomplete database list`)
-            }
-        }
-        return new NotionHandler(data as NotionHandlerData)
+        const validator = z.object({
+            token: z.string(),
+            source: z.string(),
+            output: z.string(),
+            log: z.string(),
+        })
+        return new NotionHandler(validator.parse(data) as NotionHandlerData)
     }
 
 
@@ -253,26 +252,26 @@ export class NotionHandler {
         return new SrcTaskList(task_set)
     }
 
-    // async log_item(item: NotionLogItem) {
-    //     return await this.client.pages.create({
-    //         parent: { database_id: this.databases.log },
-    //         properties: {
-    //             Name: {
-    //                 title: [ {
-    //                     type: 'text',
-    //                     text: { content: item.name }
-    //                 } ]
-    //             },
-    //             Notes: {
-    //                 rich_text: [ {
-    //                     type: "text",
-    //                     text: { content: item.notes }
-    //                 } ]
-    //             },
-    //             Tags: {
-    //                 multi_select: item.tags.map(tag => { return { name: tag } })
-    //             }
-    //         }
-    //     })
-    // }
+    async log_task(item: NotionLogItem) {
+        return await this.client.pages.create({
+            parent: { database_id: this.log },
+            properties: {
+                Name: {
+                    title: [ {
+                        type: 'text',
+                        text: { content: item.name }
+                    } ]
+                },
+                Notes: {
+                    rich_text: [ {
+                        type: "text",
+                        text: { content: item.notes }
+                    } ]
+                },
+                Tags: {
+                    multi_select: item.tags.map(tag => ({ name: tag }))
+                }
+            }
+        })
+    }
 }
