@@ -6,19 +6,18 @@ import { NotionHandler, NotionLogItem } from "./api_handlers.ts"
 import { TaskHistory, SrcTaskList, the_choosening } from "./task_gen.ts"
 
 
-const notion_handler = NotionHandler.from_obj({
-    token: Deno.env.get('NOTION_TOKEN') || 'lol',
-    source: Deno.env.get('FOCUS_DB_ID') || 'lol',
-    output: Deno.env.get('OUTPUT_ID') || 'lol',
-    log: Deno.env.get('LOG_ID') || 'lol',
-})
-
 const router = new Router();
 router
     .get('/', (ctx) => {
         ctx.response.body = "Hi Router";
     })
     .get('/daily-tasks', async (ctx) => {
+        const notion_handler = NotionHandler.from_obj({
+            token: Deno.env.get('NOTION_TOKEN'),
+            source: Deno.env.get('FOCUS_DB_ID'),
+            output: Deno.env.get('OUTPUT_ID'),
+            log: Deno.env.get('LOG_ID'),
+        })
         console.log('get /daily-tasks');
         const src_task_list: SrcTaskList = await notion_handler.query_source();
         const history: TaskHistory = await notion_handler.query_history(src_task_list, 'dt_src');
@@ -34,6 +33,12 @@ router
         ctx.response.body = resp
     })
     .get('/work-out', async (ctx) => {
+        const notion_handler = NotionHandler.from_obj({
+            token: Deno.env.get('NOTION_TOKEN'),
+            source: Deno.env.get('WORKOUT_DB_ID'),
+            output: Deno.env.get('OUTPUT_ID'),
+            log: Deno.env.get('LOG_ID'),
+        })
         console.log('get /work-out');
         const src_task_list: SrcTaskList = await notion_handler.query_source();
         const history: TaskHistory = await notion_handler.query_history(src_task_list, "exc_src");
@@ -50,14 +55,20 @@ router
 
     })
     .post('/log', async (ctx) => {
+        const notion_handler = NotionHandler.from_obj({
+            token: Deno.env.get('NOTION_TOKEN'),
+            source: Deno.env.get('FOCUS_DB_ID'),
+            output: Deno.env.get('OUTPUT_ID'),
+            log: Deno.env.get('LOG_ID'),
+        })
         console.log('get /log');
         const validator = z.object({
             name: z.string(),
             notes: z.string(),
             tags: z.string().array(),
         })
-        const result = await ctx.request.body({type: 'json'}).value
 
+        const result = await ctx.request.body({type: 'json'}).value
         ctx.response.body = await notion_handler.log_task(validator.parse(result) as NotionLogItem)
     })
 

@@ -33,7 +33,7 @@ export class NotionHandler {
         this.log = data.log
     }
 
-    static from_obj(data: Record<string, string>): NotionHandler | never {
+    static from_obj(data: Record<string, string | undefined>): NotionHandler | never {
         // check for db fields
         const validator = z.object({
             token: z.string(),
