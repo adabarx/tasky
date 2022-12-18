@@ -105,7 +105,11 @@ export class NotionHandler {
                     dt_src: {
                         type: 'relation',
                         relation: [ { id: task.id } ]
-                    }
+                    },
+                    Important: {
+                        type: 'checkbox',
+                        checkbox: task.forced_today,
+                    },
                 }
             });
         }));
