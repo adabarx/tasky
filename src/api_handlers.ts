@@ -65,7 +65,7 @@ export class NotionHandler {
                     },
                     Tags: {
                         type: 'multi_select',
-                        multi_select: task.tags.map(tag => { return { name: tag }; }),
+                        multi_select: task.tags.map((tag: string) => ({ name: tag })),
                     },
                     exc_src: {
                         type: 'relation',
@@ -102,14 +102,18 @@ export class NotionHandler {
                         type: 'multi_select',
                         multi_select: task.tags.map(tag => ({ name: tag })),
                     },
+                    Time: {
+                        type: 'number',
+                        number: task.minutes,
+                    },
                     dt_src: {
                         type: 'relation',
                         relation: [ { id: task.id } ]
                     },
                     Important: {
-                        type: 'checkbox',
-                        checkbox: task.forced_today,
-                    },
+                        type: 'number',
+                        number: task.priority,
+                    }
                 }
             });
         }));
@@ -198,6 +202,12 @@ export class NotionHandler {
                         name: z.string()
                     }).array()
                 }),
+                Time: z.object({
+                    number: z.number().nullable(),
+                }),
+                Important: z.object({
+                    number: z.number().nullable(),
+                }),
                 Started: z.object({
                     date: z.object({
                         start: z.string()
@@ -224,6 +234,14 @@ export class NotionHandler {
                         .Tags
                             .multi_select
                             .map((day) => day.name),
+
+                priority: val_resp.data.properties
+                        .Important
+                            .number || 99,
+
+                minutes: val_resp.data.properties
+                        .Time
+                            .number || 0,
 
                 per_week: val_resp.data.properties
                         .Sessions

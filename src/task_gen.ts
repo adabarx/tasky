@@ -11,6 +11,8 @@ export type Task = {
     id:           string;
     name:         string;
     tags:         string[]; 
+    priority:     number;
+    minutes:      number;
     per_week:     number;
     time_of_day:  TimeOfDay[];
     active:       boolean;
@@ -137,28 +139,41 @@ function num_tasks_today(
     const target_avg = src_task_list.total_per_week / CYCLE;
     const current_avg = task_history.data.length / CYCLE;
 
+    const tasks = Object.values(src_task_list.data)
+    let avg_start = tasks.map(task => Math.min(Math.floor(diffInDays(datetime(), datetime(task.started))), 7))
+                         .reduce((total, days) => days + total, 0) / tasks.length
+    const normalized_start = avg_start / 7 // normalize for bias
+
     let num_today = 0;
     if (current_avg === 0) {
-        num_today = target_avg + 1;
+        num_today = target_avg ** 2;
     } else {
         num_today = target_avg * (target_avg / current_avg);
     }
 
-    num_today = Math.min(num_today, target_avg + 1)
+    const bias_avg = (x: number, y: number, bias: number) => (x * bias) + (y * (1 - bias));
+    const sat_curve = (x: number) => round_to(Math.tanh(x * 3), 3);
 
-    const rv = random_round(num_today)
+    const bias_result = bias_avg(target_avg, num_today, sat_curve(1 - normalized_start))
+
+    const rv = random_round(bias_result)
     log['num_tasks_today'] = {
-        target_avg,
-        current_avg,
-        num_today: {
-            num_today,
-            final: rv
-        },
+        target_avg: round_to(target_avg, 2),
+        current_avg: round_to(current_avg, 2),
+        num_today: round_to(num_today, 2),
+        avg_days_since_start: round_to(avg_start, 2),
+        bias: `(num_today: ${round_to(num_today, 2)} * bias: ${round_to(1 - sat_curve(1 - normalized_start), 2)}) ${round_to(num_today * (1 - sat_curve(1 - normalized_start)), 2)} + ${round_to(target_avg * sat_curve(1 - normalized_start), 2)} (target_avg: ${round_to(target_avg, 2)} * bias: ${round_to(sat_curve(1 - normalized_start), 2)})`,
+        bias_result: round_to(bias_result, 2),
+        final: rv
     }
     
     return rv;
 }
 
+function round_to(num: number, decimals: number): number {
+    decimals = 10 ** decimals
+    return Math.round(num * decimals) / decimals
+}
 
 function calc_weights(
     src_task_list: SrcTaskList, 
