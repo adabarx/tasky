@@ -18,6 +18,7 @@ export type Task = {
     active:       boolean;
     forced_today: boolean;
     started:      Date;
+    warm_up:      number;
 }
 
 export class TaskHistory {
@@ -40,12 +41,40 @@ export class SrcTaskList {
 
     constructor(tasks: Set<Task>) {
         this.data = {}
-        this.total_per_week = 0
         tasks.forEach(task => {
             this.data[task.id] = task;
             this.total_per_week += task.per_week;
         });
+        
+        this.total_per_week = [ ...this.getLotto(), ...this.getForcedToday() ].reduce((total, task) => total + task.per_week, 0);
     }
+
+    getLotto() {
+        const now = datetime()
+        return Object.values(this.data)
+                     .filter(task => !task.forced_today && task.active)
+                     .map(task => {
+                         const start = datetime(task.started)
+                         const end = start.add({ day: task.warm_up * 7 })
+                         const totalWarmUp = diffInDays(start, end)
+                         const progress = diffInDays(start, now)
+
+                         if (task.warm_up === 0 || progress > totalWarmUp) {
+                             return task
+                         }
+
+                         return {
+                             ...task,
+                             per_week: task.per_week * (progress / totalWarmUp),
+                         } as Task
+                     })
+    }
+
+    getForcedToday() {
+        return Object.values(this.data)
+                     .filter(task => task.forced_today);
+    }
+
 }
 
 
@@ -76,11 +105,11 @@ export function the_choosening(
      */ 
     const log: Record<string, any> = {};
 
-    const forced_today = Object.values(src_task_list.data).filter(task => task.forced_today);
-    const num_today = num_tasks_today(src_task_list, task_history, log) - forced_today.length;
+    const num_today = num_tasks_today(src_task_list, task_history, log);
     const weights = calc_weights(src_task_list, task_history, log);
 
-    const the_chosen = new Set<Task>(forced_today);
+    const the_chosen = new Set<Task>(src_task_list.getForcedToday());
+
     for (let i = 0; i < num_today; i++) {
         // Run a weighted lottery to semi-randomly pick todays tasks
         const entries = Object.entries(weights).sort(() => Math.random() - 0.5);
@@ -139,9 +168,9 @@ function num_tasks_today(
     const target_avg = src_task_list.total_per_week / CYCLE;
     const current_avg = task_history.data.length / CYCLE;
 
-    const tasks = Object.values(src_task_list.data)
-    let avg_start = tasks.map(task => Math.min(Math.floor(diffInDays(datetime(), datetime(task.started))), 7))
-                         .reduce((total, days) => days + total, 0) / tasks.length
+    const tasks = src_task_list.getLotto()
+    const avg_start = tasks.map(task => Math.min(Math.floor(diffInDays(datetime(), datetime(task.started))), 7))
+                           .reduce((total, days) => days + total, 0) / tasks.length
     const normalized_start = avg_start / 7 // normalize for bias
 
     let num_today = 0;
@@ -212,34 +241,32 @@ function calc_weights(
 
     log['calc_weights'] = {}
     const weights: Weights = {};
-    Object.values(src_task_list.data).forEach(task => {
-        if (task.active && !task.forced_today) {
-            const seed = calc_seed(task)
-            const occurrences = task_history.occurrences[task.id] || 0;
-            const total = occurrences + seed
+    src_task_list.getLotto().forEach(task => {
+        const seed = calc_seed(task)
+        const occurrences = task_history.occurrences[task.id] || 0;
+        const total = occurrences + seed
 
-            const base = total > 0 ?
-                         task.per_week - (total - task.per_week) :
-                         task.per_week * 2;
-            const mult = total > 0 ? 
-                         task.per_week / total :
-                         task.per_week * 2;
+        const base = total > 0 ?
+                     task.per_week - (total - task.per_week) :
+                     task.per_week * 2;
+        const mult = total > 0 ? 
+                     task.per_week / total :
+                     task.per_week * 2;
 
-            log.calc_weights[task.name] = {
-                occurrences: {
-                    base: occurrences,
-                    seed,
-                    total,
-                },
-                final_calc: {
-                    base,
-                    mult,
-                    total: base * mult,
-                },
-            }
-
-            weights[task.id] = base * mult;
+        log.calc_weights[task.name] = {
+            occurrences: {
+                base: occurrences,
+                seed,
+                total,
+            },
+            final_calc: {
+                base,
+                mult,
+                total: base * mult,
+            },
         }
+
+        weights[task.id] = base * mult;
     });
     return weights;
 }

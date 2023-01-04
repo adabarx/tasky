@@ -1,4 +1,4 @@
-import { z } from "https://deno.land/x/zod/mod.ts";
+import { z } from "https://deno.land/x/zod@v3.20.2/mod.ts";
 import { datetime } from "https://deno.land/x/ptera@v1.0.2/mod.ts";
 import { Client } from "https://deno.land/x/notion_sdk@v1.0.4/src/mod.ts";
 
@@ -212,7 +212,10 @@ export class NotionHandler {
                     date: z.object({
                         start: z.string()
                     })
-                })
+                }),
+                warm_up: z.optional(z.object({
+                    number: z.number()
+                })),
             })
         })
         resp.results.forEach(page => {
@@ -265,11 +268,13 @@ export class NotionHandler {
                             .includes(datetime().toZonedTime('America/Chicago').weekDay()),
 
                 started: new Date(val_resp.data.properties
-                          .Started
-                              .date
-                                  .start),
-            } as Task)
-            
+                                               .Started
+                                               .date
+                                               .start),
+
+                warm_up: val_resp.data.properties
+                                      .warm_up?.number || 0,
+            } as Task)                
         })
         return new SrcTaskList(task_set)
     }
