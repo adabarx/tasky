@@ -52,7 +52,9 @@ export class SrcTaskList {
     getLotto() {
         const now = datetime()
         return Object.values(this.data)
-                     .filter(task => !task.forced_today && task.active)
+                     .filter(task => !task.forced_today &&
+                                     task.active &&
+                                     datetime(task.started).isBefore())
                      .map(task => {
                          const start = datetime(task.started)
                          const end = start.add({ day: task.warm_up * 7 })
