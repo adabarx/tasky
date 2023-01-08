@@ -255,6 +255,8 @@ function calc_weights(
                      task.per_week / total :
                      task.per_week * 2;
 
+        const wght = Math.max(base * mult, 0);
+
         log.calc_weights[task.name] = {
             occurrences: {
                 base: occurrences,
@@ -264,11 +266,11 @@ function calc_weights(
             final_calc: {
                 base,
                 mult,
-                total: base * mult,
+                total: wght,
             },
         }
 
-        weights[task.id] = Math.max(base * mult, 0);
+        weights[task.id] = wght;
     });
     return weights;
 }
