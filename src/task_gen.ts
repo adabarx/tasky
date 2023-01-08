@@ -268,7 +268,7 @@ function calc_weights(
             },
         }
 
-        weights[task.id] = base * mult;
+        weights[task.id] = Math.max(base * mult, 0);
     });
     return weights;
 }
