@@ -286,11 +286,31 @@ function calc_seed(task: Task) {
 function random_round(num: number) {
     /**
      * randomly round rv up or down weighted by the decimal remainder
+     *  
+     * if num is a whole number: there is an equal, three-way chance
+     * that this function will round up, round down, or not round at all
+     * 
      * example: num == 3.75
      * output:
      *   3 - 25% of the time
      *   4 - 75% of the time
+     *
+     * example: num == 3
+     * output:
+     *   2 - 33% of the time
+     *   3 - 33% of the time
+     *   4 - 33% of the time
      */
+    if (num % 1 === 0) {
+        const r = Math.random()
+        if (r > 0.666) {
+            return num + 1;
+        } else if (r < 0.333) {
+            return num - 1;
+        }
+        // r is between 0.666 and 0.333
+        return num
+    }
     return Math.floor(num) + Number((num % 1) > Math.random());
 }
 
