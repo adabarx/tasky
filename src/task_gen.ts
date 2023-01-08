@@ -259,6 +259,7 @@ function calc_weights(
 
         log.calc_weights[task.name] = {
             occurrences: {
+                per_week: task.per_week,
                 base: occurrences,
                 seed,
                 total,
