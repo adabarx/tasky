@@ -216,6 +216,14 @@ export class NotionHandler {
                 warm_up: z.optional(z.object({
                     number: z.number()
                 })),
+                End: z.object({
+                    date: z.object({
+                        start: z.string().nullable()
+                    }).nullable()
+                }),
+                Cooldown: z.object({
+                    number: z.number().nullable()
+                }),
             })
         })
         resp.results.forEach(page => {
@@ -274,6 +282,13 @@ export class NotionHandler {
 
                 warm_up: val_resp.data.properties
                                       .warm_up?.number || 0,
+
+                end: val_resp.data.properties.End.date?.start
+                     ? new Date(val_resp.data.properties.End.date.start)
+                     : null,
+
+                cooldown: val_resp.data.properties
+                                       .Cooldown?.number || 0,
             } as Task)                
         })
         return new SrcTaskList(task_set)

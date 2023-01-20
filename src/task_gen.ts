@@ -8,17 +8,19 @@ export type Weights = Record<string, number>;
 export type TimeOfDay = 'morning' | 'day' | 'night';
 
 export type Task = {
-    id:           string;
-    name:         string;
-    tags:         string[]; 
-    priority:     number;
-    minutes:      number;
-    per_week:     number;
-    time_of_day:  TimeOfDay[];
-    active:       boolean;
-    forced_today: boolean;
-    started:      Date;
-    warm_up:      number;
+    id:             string;
+    name:           string;
+    tags:           string[] 
+    priority:       number;
+    minutes:        number;
+    per_week:       number;
+    time_of_day:    TimeOfDay[];
+    active:         boolean;
+    forced_today:   boolean;
+    started:        Date;
+    warm_up:        number;
+    end:            Date | null;
+    cooldown:       number;
 }
 
 export class TaskHistory {
@@ -52,23 +54,38 @@ export class SrcTaskList {
     getLotto() {
         const now = datetime()
         return Object.values(this.data)
-                     .filter(task => !task.forced_today &&
-                                     task.active &&
-                                     datetime(task.started).isBefore())
+                     .filter(task => {
+                         if (task.end === null) {
+                             return !task.forced_today
+                                    && task.active
+                                    && datetime().isAfter(datetime(task.started))
+                         }
+                         return !task.forced_today
+                                && task.active
+                                && datetime().isAfter(datetime(task.started))
+                                && datetime().isBefore( datetime(task.end).add({ day: task.warm_up * 7 }) )
+                     })
                      .map(task => {
+                         const rv = { ...task }
                          const start = datetime(task.started)
-                         const end = start.add({ day: task.warm_up * 7 })
-                         const totalWarmUp = diffInDays(start, end)
-                         const progress = diffInDays(start, now)
-
-                         if (task.warm_up === 0 || progress > totalWarmUp) {
-                             return task
+                         const endOfWarmup = start.add({ day: task.warm_up * 7 })
+                         if (datetime().isBefore(endOfWarmup)) {
+                             const totalWarmup = diffInDays(start, endOfWarmup)
+                             const progressWarmup = diffInDays(start, now)
+                             rv.per_week *= progressWarmup / totalWarmup
                          }
 
-                         return {
-                             ...task,
-                             per_week: task.per_week * (progress / totalWarmUp),
-                         } as Task
+                         if (task.end) {
+                             const end = datetime(task.end)
+                             if (datetime().isAfter(end)) {
+                                 const endOfCooldown = end.add({ day: task.cooldown * 7 })
+                                 const totalCooldown = diffInDays(end, endOfCooldown)
+                                 const progressCooldown = diffInDays(now, end)
+                                 rv.per_week *= progressCooldown / totalCooldown
+                             }
+                         }
+
+                         return rv
                      })
     }
 
