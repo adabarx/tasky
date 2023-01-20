@@ -129,7 +129,6 @@ export function the_choosening(
 
     const the_chosen = new Set<Task>(src_task_list.getForcedToday());
 
-    log['current_time'] = datetime().toISO().split('T')
     log['num_tasks_today']['total_weight'] = Object.values(weights).reduce((total, number) => total + number, 0);
 
     for (let i = 0; i < num_today; i++) {

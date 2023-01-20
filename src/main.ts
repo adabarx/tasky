@@ -1,5 +1,6 @@
 import "https://deno.land/x/dotenv@v3.2.0/load.ts";
 import { Application, Router } from "https://deno.land/x/oak@v11.1.0/mod.ts";
+import { datetime } from "https://deno.land/x/ptera@v1.0.2/mod.ts";
 import { z } from "https://deno.land/x/zod@v3.20.2/mod.ts";
 
 import { NotionHandler, NotionLogItem } from "./api_handlers.ts"
@@ -24,6 +25,7 @@ router
         const [the_chosen, log] = the_choosening(src_task_list, history);
         const notion_resp = await notion_handler.add_tasks(Array.from(the_chosen));
         const resp = {
+            current_time: datetime().toISO().split('T'),
             log,
             history,
             src_task_list,
@@ -45,6 +47,7 @@ router
         const [the_chosen, log] = the_choosening(src_task_list, history);
         const notion_resp = await notion_handler.add_exercises(Array.from(the_chosen));
         const resp = {
+            current_time: datetime().toISO().split('T'),
             log,
             history,
             src_task_list,
