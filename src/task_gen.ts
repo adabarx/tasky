@@ -208,11 +208,12 @@ function num_tasks_today(
 
     const rv = random_round(bias_result)
     log['num_tasks_today'] = {
+        num_today: round_to(num_today, 2),
         target_avg: round_to(target_avg, 2),
         current_avg: round_to(current_avg, 2),
-        num_today: round_to(num_today, 2),
         avg_days_since_start: round_to(avg_start, 2),
-        bias: `(num_today: ${round_to(num_today, 2)} * bias: ${round_to(1 - sat_curve(1 - normalized_start), 2)}) ${round_to(num_today * (1 - sat_curve(1 - normalized_start)), 2)} + ${round_to(target_avg * sat_curve(1 - normalized_start), 2)} (target_avg: ${round_to(target_avg, 2)} * bias: ${round_to(sat_curve(1 - normalized_start), 2)})`,
+        bias_num_today: `(num_today: ${round_to(num_today, 2)} * bias: ${round_to(1 - sat_curve(1 - normalized_start), 2)}) ${round_to(num_today * (1 - sat_curve(1 - normalized_start)), 2)}`,
+        bias_target_avg: `(target_avg: ${round_to(target_avg, 2)} * bias: ${round_to(sat_curve(1 - normalized_start), 2)}) ${round_to(target_avg * sat_curve(1 - normalized_start), 2)}`,
         bias_result: round_to(bias_result, 2),
         final: rv
     }
