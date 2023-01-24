@@ -121,13 +121,19 @@ export class NotionHandler {
 
 
     async query_history(src_task_list: SrcTaskList, src_name: 'dt_src' | 'exc_src'): Promise<TaskHistory> {
+        const before = datetime().subtract({day: 1}).toISODate();
+        const after = datetime().subtract({day: 8}).toISODate();
         const resp = await this.client.databases.query({
             database_id: this.output,
             filter: {
                 and: [
                     {
                         timestamp: "created_time",
-                        created_time: { "past_week": {} }
+                        created_time: { "on_or_before": before }
+                    },
+                    {
+                        timestamp: "created_time",
+                        created_time: { "on_or_after": after }
                     },
                     {
                         or: Object.keys(src_task_list.data).map(id => {
