@@ -124,17 +124,22 @@ export function the_choosening(
      */ 
     const log: Record<string, any> = {};
 
-    const num_today = num_tasks_today(src_task_list, task_history, log);
     const weights = calc_weights(src_task_list, task_history, log);
+
+    let num_today = num_tasks_today(src_task_list, task_history, log);
+    num_today -= src_task_list.getForcedToday().length
 
     const the_chosen = new Set<Task>(src_task_list.getForcedToday());
 
-    log['num_tasks_today']['total_weight'] = Object.values(weights).reduce((total, number) => total + number, 0);
+    log['num_tasks_today']['total_weight'] = Object.values(weights)
+                                                   .reduce((total, number) => total + number, 0);
 
     for (let i = 0; i < num_today; i++) {
         // Run a weighted lottery to semi-randomly pick todays tasks
-        const entries = Object.entries(weights).sort(() => Math.random() - 0.5);
-        const total_weight = Object.values(weights).reduce((total, number) => total + number, 0);
+        const entries = Object.entries(weights)
+                              .sort(() => Math.random() - 0.5);
+        const total_weight = Object.values(weights)
+                                   .reduce((total, number) => total + number, 0);
         const random = Math.random() * total_weight;
 
         let cumulative_weight = 0;
