@@ -163,13 +163,13 @@ export class NotionHandler {
 
     async query_source(): Promise<SrcTaskList> {
         const weekday_map: Record<string, number> = {
-            'mon': 1,
-            'tue': 2,
-            'wed': 3,
-            'thu': 4,
-            'fri': 5,
-            'sat': 6,
-            'sun': 0,
+            'mon': 2,
+            'tue': 3,
+            'wed': 4,
+            'thu': 5,
+            'fri': 6,
+            'sat': 0,
+            'sun': 1,
         }
         const resp = await this.client.databases.query({
             database_id: this.source
