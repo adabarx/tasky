@@ -163,13 +163,13 @@ export class NotionHandler {
 
     async query_source(): Promise<SrcTaskList> {
         const weekday_map: Record<string, number> = {
-            'mon': 2,
-            'tue': 3,
-            'wed': 4,
-            'thu': 5,
-            'fri': 6,
-            'sat': 0,
-            'sun': 1,
+            'mon': 0,
+            'tue': 1,
+            'wed': 2,
+            'thu': 3,
+            'fri': 4,
+            'sat': 5,
+            'sun': 6,
         }
         const resp = await this.client.databases.query({
             database_id: this.source
@@ -238,63 +238,69 @@ export class NotionHandler {
                 console.log(val_resp.error);
                 return
             }
+            const properties = val_resp.data.properties;
 
             task_set.add({
                 id: val_resp.data.id,
 
-                name: val_resp.data.properties
-                        .Name
-                            .title[0]
-                                .plain_text,
+                name: properties
+                    .Name
+                    .title[0]
+                    .plain_text,
 
-                tags: val_resp.data.properties
-                        .Tags
-                            .multi_select
-                            .map((day) => day.name),
+                tags: properties
+                    .Tags
+                    .multi_select
+                    .map((day) => day.name),
 
-                priority: val_resp.data.properties
-                        .Important
-                            .number || 99,
+                priority: properties
+                    .Important
+                    .number || 99,
 
-                minutes: val_resp.data.properties
-                        .Time
-                            .number || 0,
+                minutes: properties
+                    .Time
+                    .number || 0,
 
-                per_week: val_resp.data.properties
-                        .Sessions
-                            .number || 0,
+                per_week: properties
+                    .Sessions
+                    .number || 0,
 
-                time_of_day: val_resp.data.properties
-                        .time_of_day
-                            .multi_select
-                            .map(time => time.name),
+                time_of_day: properties
+                    .time_of_day
+                    .multi_select
+                    .map(time => time.name),
 
-                active: !val_resp.data.properties
-                        .Days_off
-                            .multi_select
-                            .map((day) => weekday_map[day.name])
-                            .includes(datetime().toZonedTime('America/Chicago').weekDay()),
+                active: !properties
+                    .Days_off
+                    .multi_select
+                    .map((day) => weekday_map[day.name])
+                    .includes(datetime().toZonedTime('America/Chicago').weekDay()),
 
-                forced_today: val_resp.data.properties
-                        .Days_on
-                            .multi_select
-                            .map((day) => weekday_map[day.name])
-                            .includes(datetime().toZonedTime('America/Chicago').weekDay()),
+                forced_today: properties
+                    .Days_on
+                    .multi_select
+                    .map((day) => weekday_map[day.name])
+                    .includes(datetime().toZonedTime('America/Chicago').weekDay()),
 
-                started: new Date(val_resp.data.properties
-                                               .Started
-                                               .date
-                                               .start),
+                started: new Date(properties
+                    .Started
+                    .date
+                    .start),
 
-                warm_up: val_resp.data.properties
-                                      .warm_up?.number || 0,
+                warm_up: properties
+                    .warm_up
+                    ?.number || 0,
 
-                end: val_resp.data.properties.End.date?.start
-                     ? new Date(val_resp.data.properties.End.date.start)
-                     : null,
+                end: properties
+                    .End
+                    .date
+                    ?.start
+                        ? new Date(properties.End.date.start)
+                        : null,
 
-                cooldown: val_resp.data.properties
-                                       .Cooldown?.number || 0,
+                cooldown: properties
+                    .Cooldown
+                    ?.number || 0,
             } as Task)                
         })
         return new SrcTaskList(task_set)
