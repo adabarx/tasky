@@ -48,7 +48,7 @@ export class SrcTaskList {
             this.total_per_week += task.per_week;
         });
         
-        this.total_per_week = [ ...this.getLotto(), ...this.getForcedToday() ].reduce((total, task) => total + task.per_week, 0);
+        this.total_per_week = [ ...this.getLotto(), ...this.getNotToday(), ...this.getForcedToday() ].reduce((total, task) => total + task.per_week, 0);
     }
 
     getLotto() {
@@ -92,6 +92,11 @@ export class SrcTaskList {
     getForcedToday() {
         return Object.values(this.data)
                      .filter(task => task.forced_today);
+    }
+
+    getNotToday() {
+        return Object.values(this.data)
+                     .filter(task => !task.active);
     }
 
 }
