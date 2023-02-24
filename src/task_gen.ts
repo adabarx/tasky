@@ -21,6 +21,7 @@ export type Task = {
     warm_up:        number;
     end:            Date | null;
     cooldown:       number;
+    choke_group:    number | null;
 }
 
 export class TaskHistory {
@@ -138,7 +139,6 @@ export function the_choosening(
 
     log['num_tasks_today']['total_weight'] = Object.values(weights)
                                                    .reduce((total, number) => total + number, 0);
-
     for (let i = 0; i < num_today; i++) {
         // Run a weighted lottery to semi-randomly pick todays tasks
         const entries = Object.entries(weights)
@@ -159,10 +159,15 @@ export function the_choosening(
         }
 
         if (index < Object.entries(weights).length) {
-            const id = entries[index][0]
+            const id = entries[index][0];
+            const chosen_task = src_task_list.data[id];
+            the_chosen.add(chosen_task)
             Object.values(src_task_list.data).forEach(task => {
-                if (task.id === id) {
-                    the_chosen.add(task);
+                if (chosen_task.choke_group !== null && 
+                    chosen_task.choke_group === task.choke_group &&
+                    chosen_task.id !== task.id
+                ) {
+                    delete weights[task.id]
                 }
             });
             delete weights[id];
@@ -172,7 +177,6 @@ export function the_choosening(
     }
     return [the_chosen, log];
 }
-
 
 function num_tasks_today(
     src_task_list: SrcTaskList, 

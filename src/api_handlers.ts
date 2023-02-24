@@ -230,6 +230,9 @@ export class NotionHandler {
                 Cooldown: z.object({
                     number: z.number().nullable()
                 }),
+                choke_group: z.object({
+                    number: z.number().nullable()
+                }).nullable()
             })
         })
         resp.results.forEach(page => {
@@ -301,6 +304,10 @@ export class NotionHandler {
                 cooldown: properties
                     .Cooldown
                     ?.number || 0,
+
+                choke_group: properties
+                    ?.choke_group
+                    ?.number || null,
             } as Task)                
         })
         return new SrcTaskList(task_set)
