@@ -204,9 +204,16 @@ function num_tasks_today(
     const current_avg = task_history.data.length / CYCLE;
 
     const tasks = src_task_list.getLotto()
-    const avg_start = tasks.map(task => Math.min(Math.floor(diffInDays(datetime(), datetime(task.started))), 7))
-                           .reduce((total, days) => days + total, 0) / tasks.length
-    const normalized_start = avg_start / 7 // normalize for bias
+
+    // calculate saturation_val
+    const less_than_seven = tasks.filter(task => diffInDays(datetime(), datetime(task.started)) < 7);
+    let avg_start = 7;
+    if (less_than_seven.length > 0) {
+        avg_start = less_than_seven.map(task => diffInDays(datetime(), datetime(task.started)))
+                                   .reduce((total, diff_in_days) => total + diff_in_days, 0) / less_than_seven.length;
+    }
+
+    const saturation_val = avg_start / 7 // normalize for bias
 
     let num_today = 0;
     if (current_avg === 0) {
@@ -216,9 +223,9 @@ function num_tasks_today(
     }
 
     const bias_avg = (x: number, y: number, bias: number) => (x * bias) + (y * (1 - bias));
-    const sat_curve = (x: number) => round_to(Math.tanh(x * 4), 3);
+    const sat_curve = (x: number) => round_to(Math.tanh(x * 2), 3);
 
-    const bias_result = bias_avg(target_avg, num_today, sat_curve(1 - normalized_start))
+    const bias_result = bias_avg(target_avg, num_today, sat_curve(1 - saturation_val))
 
     const rv = random_round(bias_result)
     log['num_tasks_today'] = {
@@ -226,8 +233,8 @@ function num_tasks_today(
         target_avg: round_to(target_avg, 2),
         current_avg: round_to(current_avg, 2),
         avg_days_since_start: round_to(avg_start, 2),
-        bias_num_today: `(num_today: ${round_to(num_today, 2)} * bias: ${round_to(1 - sat_curve(1 - normalized_start), 2)}) ${round_to(num_today * (1 - sat_curve(1 - normalized_start)), 2)}`,
-        bias_target_avg: `(target_avg: ${round_to(target_avg, 2)} * bias: ${round_to(sat_curve(1 - normalized_start), 2)}) ${round_to(target_avg * sat_curve(1 - normalized_start), 2)}`,
+        bias_num_today: `(num_today: ${round_to(num_today, 2)} * bias: ${round_to(1 - sat_curve(1 - saturation_val), 2)}) ${round_to(num_today * (1 - sat_curve(1 - saturation_val)), 2)}`,
+        bias_target_avg: `(target_avg: ${round_to(target_avg, 2)} * bias: ${round_to(sat_curve(1 - saturation_val), 2)}) ${round_to(target_avg * sat_curve(1 - saturation_val), 2)}`,
         bias_result: round_to(bias_result, 2),
         final: rv
     }
