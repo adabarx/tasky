@@ -216,7 +216,7 @@ function num_tasks_today(
     }
 
     const bias_avg = (x: number, y: number, bias: number) => (x * bias) + (y * (1 - bias));
-    const sat_curve = (x: number) => round_to(Math.tanh(x * 3), 3);
+    const sat_curve = (x: number) => round_to(Math.tanh(x * 4), 3);
 
     const bias_result = bias_avg(target_avg, num_today, sat_curve(1 - normalized_start))
 
