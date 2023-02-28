@@ -300,15 +300,15 @@ function calc_weights(
 
         log.calc_weights[task.name] = {
             occurrences: {
-                per_week: task.per_week,
+                per_week: round_to(task.per_week, 2),
                 base: occurrences,
-                seed,
-                total,
+                seed: seed,
+                total: total,
             },
             final_calc: {
-                base,
-                mult,
-                total: wght,
+                base: round_to(base, 2),
+                mult: round_to(mult, 2),
+                total: round_to(wght, 2),
             },
         }
 
