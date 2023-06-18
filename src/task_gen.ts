@@ -347,13 +347,15 @@ function random_round(num: number) {
      */
     if (num % 1 === 0) {
         const r = Math.random()
-        if (r > 0.666) {
-            return num + 1;
-        } else if (r < 0.333) {
-            return num - 1;
+        if (r < 0.333) {
+            return num - 2;
+        } else if (r < 0.666) {
+            return num - 1
+        } else if (r < 0.8325) {
+            return num
         }
-        // r is between 0.666 and 0.333
-        return num
+        // r is above 0.5
+        return num + 2
     }
     return Math.floor(num) + Number((num % 1) > Math.random());
 }
