@@ -200,7 +200,7 @@ export class NotionHandler {
                 }),
                 time_of_day: z.object({
                     multi_select: z.object({
-                        name: z.enum(['morning', 'day', 'night'])
+                        name: z.enum(['morning', 'afternoon', 'evening'])
                     }).array()
                 }),
                 Days_on: z.object({
