@@ -122,7 +122,7 @@ export class NotionHandler {
 
     async query_history(src_task_list: SrcTaskList, src_name: 'dt_src' | 'exc_src'): Promise<TaskHistory> {
         // const before = datetime().subtract({day: 1}).toISODate();
-        const after = datetime().subtract({day: 8}).toISODate();
+        const after = datetime().subtract({day: 7}).toISODate();
         const resp = await this.client.databases.query({
             database_id: this.output,
             filter: {
